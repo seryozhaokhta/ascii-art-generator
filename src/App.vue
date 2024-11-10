@@ -66,7 +66,7 @@ export default defineComponent({
 
     // Максимальные ограничения
     const maxColumns = ref<number>(600);
-    const maxRows = ref<number>(600);
+    const maxRows = ref<number>(800);
 
     const minFontSize = 1; // Минимальный размер шрифта в px
 
