@@ -1,0 +1,29 @@
+/* src/styles/main.css */
+
+body {
+  margin: 0;
+  font-family: Helvetica, sans-serif;
+  background-color: #f0f2f5;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+input[type="file"] {
+  cursor: pointer;
+}
+
+button {
+  cursor: pointer;
+}
+
+pre {
+  margin: 0;
+}
+
+.controls-panel {
+  width: 100%;
+}
