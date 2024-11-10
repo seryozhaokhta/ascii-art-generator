@@ -12,6 +12,8 @@
           <p>Строки: {{ rows }}</p>
           <p>Количество символов: {{ characterCount }}</p>
         </div>
+        <AsciiExporter v-if="asciiData" :asciiData="asciiData" :columns="columns" :rows="rows" :fontSize="fontSize"
+          :lineHeight="lineHeight" />
       </aside>
       <section class="ascii-section">
         <AsciiCanvas :asciiData="asciiData" :columns="columns" :rows="rows" />
@@ -26,6 +28,7 @@ import HeaderBar from './components/HeaderBar.vue';
 import ImageUploader from './components/ImageUploader.vue';
 import ControlsPanel from './components/ControlsPanel.vue';
 import AsciiCanvas from './components/AsciiCanvas.vue';
+import AsciiExporter from './components/AsciiExporter.vue';
 import { convertImageToAscii, AsciiSettings } from './utils/asciiConverter';
 
 export default defineComponent({
@@ -35,18 +38,17 @@ export default defineComponent({
     ImageUploader,
     ControlsPanel,
     AsciiCanvas,
+    AsciiExporter,
   },
   setup() {
     const asciiData = ref<string>('');
     const settings = ref<AsciiSettings>({
-      columns: 40, // Начальное количество колонок
-      rows: 40,    // Начальное количество строк (будет пересчитано)
+      columns: 40,
+      rows: 40,
       charset: '@%#*+=-:. ',
     });
 
     const currentImage = ref<HTMLImageElement | null>(null);
-
-    // Вычисляемое свойство для соотношения сторон
     const aspectRatio = computed(() => {
       if (currentImage.value) {
         return currentImage.value.height / currentImage.value.width;
@@ -54,42 +56,32 @@ export default defineComponent({
       return 1;
     });
 
-    // Вычисляемое свойство для количества символов
     const characterCount = computed(() => {
       return settings.value.columns * settings.value.rows;
     });
 
-    // Вычисляемые свойства для колонок и строк с учётом сохранения пропорций
     const columns = computed(() => settings.value.columns);
-
     const rows = computed(() => settings.value.rows);
-
-    // Максимальные ограничения
     const maxColumns = ref<number>(600);
     const maxRows = ref<number>(800);
-
-    const minFontSize = 1; // Минимальный размер шрифта в px
-
-    // Ссылка на контейнер AsciiCanvas для расчёта ширины
+    const minFontSize = 1;
+    const fontSize = ref(12);
+    const lineHeight = ref(12);
     const asciiCanvasContainer = ref<HTMLElement | null>(null);
 
     const updateMaxColumns = () => {
       if (!asciiCanvasContainer.value) return;
-
       const containerWidth = asciiCanvasContainer.value.clientWidth;
       const calculatedMax = calculateMaxColumns(containerWidth, minFontSize);
-      maxColumns.value = Math.min(calculatedMax, 600); // Установите максимально допустимое значение
-
-      // Обновляем количество колонок, если оно превышает новое maxColumns
+      maxColumns.value = Math.min(calculatedMax, 600);
       if (settings.value.columns > maxColumns.value) {
         settings.value.columns = maxColumns.value;
         handleSettingsChanged(settings.value);
       }
     };
 
-    // Функция расчёта максимальных колонок
     const calculateMaxColumns = (containerWidth: number, minFontSize: number): number => {
-      const padding = 40; // Общий отступ (может быть скорректирован)
+      const padding = 40;
       const availableWidth = containerWidth - padding;
       return Math.floor(availableWidth / minFontSize);
     };
@@ -97,18 +89,16 @@ export default defineComponent({
     const handleImageSelected = async (file: File) => {
       const image = await loadImage(file);
       currentImage.value = image;
-      // Пересчитываем количество строк на основе новых колонок и соотношения сторон
       settings.value.rows = Math.round(settings.value.columns * aspectRatio.value * 0.55);
-      settings.value.rows = Math.max(1, Math.min(settings.value.rows, maxRows.value)); // Ограничение строк
+      settings.value.rows = Math.max(1, Math.min(settings.value.rows, maxRows.value));
       asciiData.value = convertImageToAscii(image, settings.value);
     };
 
     const handleSettingsChanged = (newSettings: Partial<AsciiSettings>) => {
       settings.value = { ...settings.value, ...newSettings };
       if (currentImage.value) {
-        // Пересчитываем количество строк на основе новых колонок и соотношения сторон
         settings.value.rows = Math.round(settings.value.columns * aspectRatio.value * 0.55);
-        settings.value.rows = Math.max(1, Math.min(settings.value.rows, maxRows.value)); // Ограничение строк
+        settings.value.rows = Math.max(1, Math.min(settings.value.rows, maxRows.value));
         asciiData.value = convertImageToAscii(currentImage.value, settings.value);
       }
     };
@@ -150,6 +140,8 @@ export default defineComponent({
       currentImage,
       maxColumns,
       asciiCanvasContainer,
+      fontSize,
+      lineHeight,
     };
   },
 });
