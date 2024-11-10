@@ -2,28 +2,27 @@
 
 <template>
     <div class="controls-panel">
-        <!-- Настройка размера сетки (колонки) через слайдер -->
-        <div class="control">
-            <label for="gridSize">Размер сетки (колонки): {{ localSettings.columns }}</label>
+        <div class="controls-panel__section">
+            <label for="gridSize" class="controls-panel__label">Размер сетки (колонки):</label>
             <input type="range" id="gridSize" v-model.number="localSettings.columns" :min="minColumns" :max="maxColumns"
-                @input="updateSettings" :title="gridSizeTitle" />
+                @input="updateSettings" :title="gridSizeTitle" class="controls-panel__slider" />
+            <div class="controls-panel__value">{{ localSettings.columns }}</div>
         </div>
 
-        <!-- Настройки набора символов -->
-        <div class="control">
-            <label for="charset">Набор символов:</label>
-            <div class="charset-input">
-                <select v-model="selectedPreset" @change="applyPreset">
+        <div class="controls-panel__section">
+            <label for="charset" class="controls-panel__label">Набор символов:</label>
+            <div class="controls-panel__charset-container">
+                <select v-model="selectedPreset" @change="applyPreset" class="controls-panel__select">
                     <option disabled value="">Выберите набор символов</option>
                     <option v-for="preset in presets" :key="preset.name" :value="preset.charset">
                         {{ preset.name }}
                     </option>
                 </select>
-                <button @click="resetCharset">Сбросить</button>
+                <button @click="resetCharset" class="controls-panel__button">Сбросить</button>
             </div>
             <textarea v-model="localSettings.charset" @input="updateSettings"
-                placeholder="Введите свои символы здесь..." rows="3"></textarea>
-            <p class="preset-description">{{ currentPresetDescription }}</p>
+                placeholder="Введите свои символы здесь..." class="controls-panel__textarea"></textarea>
+            <p class="controls-panel__preset-description">{{ currentPresetDescription }}</p>
         </div>
     </div>
 </template>
@@ -44,41 +43,25 @@ export default defineComponent({
     props: {
         aspectRatio: {
             type: Number,
-            required: true, // Обязательный пропс, так как пропорции всегда сохраняются
+            required: true,
         },
         maxColumns: {
             type: Number,
-            required: true, // Максимальное количество колонок
+            required: true,
         },
     },
     setup(props, { emit }) {
         const localSettings = reactive<AsciiSettings>({
-            columns: 40, // Начальное количество колонок
-            rows: 40,    // Начальное количество строк (будет пересчитано)
+            columns: 40,
+            rows: 40,
             charset: '@%#*+=-:. ',
         });
 
         const presets: Preset[] = [
-            {
-                name: 'Стандартный',
-                charset: '@%#*+=-:. ',
-                description: 'Стандартный набор символов для базовой детализации.',
-            },
-            {
-                name: 'Детализированный',
-                charset: '#@S%?*+;:,.',
-                description: 'Более детализированный набор символов для улучшенной детализации.',
-            },
-            {
-                name: 'Тёмный',
-                charset: '█▓▒░',
-                description: 'Набор символов для тёмных изображений.',
-            },
-            {
-                name: 'Светлый',
-                charset: ' .:-=+*#%@',
-                description: 'Набор символов для светлых изображений.',
-            },
+            { name: 'Стандартный', charset: '@%#*+=-:. ', description: 'Стандартный набор символов.' },
+            { name: 'Детализированный', charset: '#@S%?*+;:,.', description: 'Улучшенная детализация.' },
+            { name: 'Тёмный', charset: '█▓▒░', description: 'Для тёмных изображений.' },
+            { name: 'Светлый', charset: ' .:-=+*#%@', description: 'Для светлых изображений.' },
         ];
 
         const selectedPreset = ref<string>('');
@@ -101,26 +84,16 @@ export default defineComponent({
         };
 
         const updateSettings = () => {
-            // Пересчитываем количество строк на основе новых колонок и соотношения сторон
             const calculatedRows = Math.round(localSettings.columns * props.aspectRatio * 0.55);
-            localSettings.rows = Math.max(1, Math.min(calculatedRows, 600)); // Ограничение строк
-
+            localSettings.rows = Math.max(1, Math.min(calculatedRows, 600));
             emit('settingsChanged', { ...localSettings });
         };
 
         const gridSizeTitle = ref<string>('Установите количество колонок для ASCII-арта (минимум 1).');
-
         const minColumns = 1;
         const maxColumns = props.maxColumns;
 
-        // Инициализируем количество строк при монтировании компонента
-        watch(
-            () => localSettings.columns,
-            (newColumns: number) => {
-                updateSettings();
-            },
-            { immediate: true }
-        );
+        watch(() => localSettings.columns, (newColumns: number) => updateSettings(), { immediate: true });
 
         return {
             localSettings,
@@ -143,35 +116,49 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
 }
 
-.control {
+.controls-panel__section {
     display: flex;
     flex-direction: column;
+    gap: 8px;
 }
 
-.charset-input {
+.controls-panel__label {
+    font-size: 0.9em;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.controls-panel__slider {
+    width: 100%;
+}
+
+.controls-panel__value {
+    font-size: 0.85em;
+    color: #555;
+    text-align: right;
+}
+
+.controls-panel__charset-container {
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-bottom: 10px;
+    width: 100%;
 }
 
-.charset-input select {
+.controls-panel__select {
     flex: 1;
     padding: 8px;
-    border: 1px solid #ccc;
     border-radius: 4px;
+    border: 1px solid #ccc;
     background-color: #f9f9f9;
     cursor: pointer;
 }
 
-.charset-input button {
+.controls-panel__button {
+    min-width: 80px;
     padding: 8px 12px;
     cursor: pointer;
     background-color: #e74c3c;
@@ -179,28 +166,27 @@ export default defineComponent({
     border: none;
     border-radius: 4px;
     transition: background-color 0.3s;
+    flex-shrink: 0;
 }
 
-.charset-input button:hover {
+.controls-panel__button:hover {
     background-color: #c0392b;
 }
 
-textarea {
+.controls-panel__textarea {
     width: 100%;
+    height: 50px;
+    /* Увеличили высоту для удобства ввода */
     padding: 8px;
-    resize: vertical;
     border: 1px solid #ccc;
     border-radius: 4px;
+    resize: none;
     font-family: 'Courier New', Courier, monospace;
 }
 
-.preset-description {
-    margin-top: 5px;
-    font-size: 0.9em;
-    color: #666666;
-}
-
-input[type='range'] {
-    width: 100%;
+.controls-panel__preset-description {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 4px;
 }
 </style>

@@ -1,13 +1,16 @@
 <!-- src/App.vue -->
 
 <template>
-  <div id="app">
+  <div class="app">
     <HeaderBar />
-    <div class="main-container">
-      <aside class="sidebar">
+    <div class="app__main-container">
+      <section class="app__ascii-section">
+        <AsciiCanvas :asciiData="asciiData" :columns="columns" :rows="rows" />
+      </section>
+      <aside class="app__sidebar">
         <ImageUploader @imageSelected="handleImageSelected" />
         <ControlsPanel @settingsChanged="handleSettingsChanged" :aspectRatio="aspectRatio" :maxColumns="maxColumns" />
-        <div class="stats-panel" v-if="currentImage">
+        <div class="app__stats-panel" v-if="currentImage">
           <p>Колонки: {{ columns }}</p>
           <p>Строки: {{ rows }}</p>
           <p>Количество символов: {{ characterCount }}</p>
@@ -15,9 +18,6 @@
         <AsciiExporter v-if="asciiData" :asciiData="asciiData" :columns="columns" :rows="rows" :fontSize="fontSize"
           :lineHeight="lineHeight" />
       </aside>
-      <section class="ascii-section">
-        <AsciiCanvas :asciiData="asciiData" :columns="columns" :rows="rows" />
-      </section>
     </div>
   </div>
 </template>
@@ -64,27 +64,8 @@ export default defineComponent({
     const rows = computed(() => settings.value.rows);
     const maxColumns = ref<number>(600);
     const maxRows = ref<number>(800);
-    const minFontSize = 1;
     const fontSize = ref(12);
     const lineHeight = ref(12);
-    const asciiCanvasContainer = ref<HTMLElement | null>(null);
-
-    const updateMaxColumns = () => {
-      if (!asciiCanvasContainer.value) return;
-      const containerWidth = asciiCanvasContainer.value.clientWidth;
-      const calculatedMax = calculateMaxColumns(containerWidth, minFontSize);
-      maxColumns.value = Math.min(calculatedMax, 600);
-      if (settings.value.columns > maxColumns.value) {
-        settings.value.columns = maxColumns.value;
-        handleSettingsChanged(settings.value);
-      }
-    };
-
-    const calculateMaxColumns = (containerWidth: number, minFontSize: number): number => {
-      const padding = 40;
-      const availableWidth = containerWidth - padding;
-      return Math.floor(availableWidth / minFontSize);
-    };
 
     const handleImageSelected = async (file: File) => {
       const image = await loadImage(file);
@@ -120,13 +101,21 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      updateMaxColumns();
-      window.addEventListener('resize', updateMaxColumns);
+      window.addEventListener('resize', updateSettingsOnResize);
     });
 
     onUnmounted(() => {
-      window.removeEventListener('resize', updateMaxColumns);
+      window.removeEventListener('resize', updateSettingsOnResize);
     });
+
+    const updateSettingsOnResize = () => {
+      if (currentImage.value) {
+        // Пересчёт настроек при изменении размера окна
+        settings.value.rows = Math.round(settings.value.columns * aspectRatio.value * 0.55);
+        settings.value.rows = Math.max(1, Math.min(settings.value.rows, maxRows.value));
+        asciiData.value = convertImageToAscii(currentImage.value, settings.value);
+      }
+    };
 
     return {
       asciiData,
@@ -139,7 +128,6 @@ export default defineComponent({
       characterCount,
       currentImage,
       maxColumns,
-      asciiCanvasContainer,
       fontSize,
       lineHeight,
     };
@@ -148,50 +136,70 @@ export default defineComponent({
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
 #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-}
-
-.main-container {
-  display: flex;
-  flex: 1;
+  width: 100vw;
   overflow: hidden;
 }
 
-.sidebar {
-  width: 373px;
+.app__main-container {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.app__ascii-section {
+  flex: 1;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.app__sidebar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: auto;
+  /* Установите фиксированную или гибкую ширину */
+  max-height: calc(100vh - 40px);
   padding: 20px;
-  background-color: #f0f2f5;
-  border-right: 1px solid #ddd;
-  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  align-items: center;
-  justify-content: flex-start;
+  overflow-y: auto;
 }
 
-.stats-panel {
-  margin-top: 20px;
+.app__stats-panel {
+  margin-top: 10px;
   padding: 10px;
   background-color: #ffffff;
-  border: 1px solid #ddd;
   border-radius: 4px;
-  width: 100%;
-  box-sizing: border-box;
   text-align: center;
-}
-
-.ascii-section {
-  flex: 1;
-  padding: 20px;
-  background-color: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  box-sizing: border-box;
+  font-size: 0.9em;
+  color: #333;
 }
 </style>

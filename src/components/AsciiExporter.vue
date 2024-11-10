@@ -126,13 +126,15 @@ export default defineComponent({
 <style scoped>
 .export-button {
     padding: 10px 20px;
-    margin-top: 20px;
     cursor: pointer;
     background-color: #4caf50;
     color: white;
     border: none;
     border-radius: 4px;
     transition: background-color 0.3s;
+    width: 100%;
+    /* Кнопка занимает всю ширину контейнера */
+    box-sizing: border-box;
 }
 
 .export-button:hover {

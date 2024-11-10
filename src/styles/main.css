@@ -4,12 +4,16 @@ body {
   margin: 0;
   font-family: Helvetica, sans-serif;
   background-color: #f0f2f5;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* Убираем полосы прокрутки */
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
 }
 
 input[type="file"] {
@@ -26,4 +30,16 @@ pre {
 
 .controls-panel {
   width: 100%;
+}
+
+/* Дополнительные стили для устранения переполнения */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
